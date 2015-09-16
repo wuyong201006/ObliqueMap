@@ -68,7 +68,7 @@ package
 		{
 			timer.start();
 			
-			if(IsPause && !aPath && aPath[pathpoint])
+			if(IsPause && aPath && aPath[pathpoint])
 			{
 				IsPause = false;
 				astar.ndStart = new ANode([aPath[pathpoint][0], aPath[pathpoint][1]], aPath[pathpoint][1]*20+aPath[pathpoint][0]);
