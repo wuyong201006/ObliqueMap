@@ -8,17 +8,34 @@ package
 		private var diamondW:Number=0;
 		private var diamondH:Number=0;
 		
+		private var _indexI:int=0;
+		private var _indexJ:int=0;
 		private var _IsBlock:Boolean;//是否可通过 
-		public function Grid(w:Number, h:Number)
+		public function Grid(w:Number, h:Number, indexI:int, indexJ:int)
 		{
 			super();
+			
+			this.mouseChildren = false;
 			
 			diamondW = w;
 			diamondH = h;
 			
+			_indexI = indexI;
+			_indexJ = indexJ;
+			
 			draw()
 		}
 		
+		
+		public function get indexI():int
+		{
+			return _indexI;
+		}
+		
+		public function get indexJ():int
+		{
+			return _indexJ;
+		}
 		
 		public function get IsBlock():Boolean
 		{

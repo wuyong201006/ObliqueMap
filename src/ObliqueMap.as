@@ -1,15 +1,19 @@
 package
 {
+	import fl.controls.Button;
+	
 	import flash.display.DisplayObjectContainer;
 	import flash.display.Shape;
 	import flash.display.Sprite;
+	import flash.display.StageScaleMode;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
+	import flash.events.TimerEvent;
 	import flash.geom.Point;
+	import flash.utils.Timer;
 	
-	import fl.controls.Button;
+	import org.osmf.events.TimeEvent;
 	
-	[SWF(width="1600", height="950", frameRate="45", backgroundColor="#000000")]
 	public class ObliqueMap extends Sprite
 	{
 		private const DIAMONDW:Number = 80;
@@ -25,11 +29,13 @@ package
 		private var reset:Button;
 		
 		private var aNodeMap:Array;
+		private var gridMap:Array;
 		private var astar:AStar;
 		private var bMove:Boolean;
 		
 		private var aPath:Array;
 		private var pathpoint:int;
+		private var timer:Timer;
 		private var mapData:Array=[
 			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
@@ -55,12 +61,19 @@ package
 		public function ObliqueMap()
 		{
 			super();
-			
 			init();
 		}
 		
 		private function clickStart(event:MouseEvent):void 
 		{
+			timer.start();
+			
+			if(IsPause)
+			{
+				IsPause = false;
+				astar.ndStart = new ANode([aPath[pathpoint][0], aPath[pathpoint][1]], aPath[pathpoint][1]*20+aPath[pathpoint][0]);
+			}
+			astar.ndEnd = new ANode([19, 19], 399);
 			if(astar.DoSearch())
 			{
 				bMove = true;
@@ -69,17 +82,45 @@ package
 			}
 		}
 		
+		private var IsPause:Boolean=false;
 		private function clickPause(event:MouseEvent):void
 		{
-			
+			bMove = false;
+			IsPause = true;
+		}
+		
+		private function clickReset(event:MouseEvent):void
+		{
+			for(var i:int=0;i<aNodeMap.length;i++)
+			{
+				for(var j:int=0;j<aNodeMap[0].length;j++)
+				{
+					var grid:Grid = gridMap[i][j];
+					grid.IsBlock = false;
+					
+					aNodeMap[i][j] = 0;
+					astar.nodeMap = aNodeMap;
+				}
+			}
+			player.x = 0;
+			player.y = /*DIAMONDH/2*/0;
+			astar.ndStart = new ANode([0,0], 0);
+			astar.ndCurrent = new ANode([0, 0], 0);
 		}
 		
 		private function setFlag(event:MouseEvent):void
 		{
-			
+			if(event.target is Grid)
+			{
+				var grid:Grid = event.target as Grid;
+				grid.IsBlock = true;
+				
+				aNodeMap[grid.indexI][grid.indexJ] = 1;
+				astar.nodeMap = aNodeMap;
+			}
 		}
 		
-		private function move(event:Event):void
+		private function move(event:TimerEvent):void
 		{
 			if(bMove)
 			{
@@ -88,11 +129,12 @@ package
 				{
 					player.x = (aPath[pathpoint][1] -aPath[pathpoint][0])*DIAMONDW/2;
 					player.y = (aPath[pathpoint][1]+aPath[pathpoint][0])*DIAMONDH/2;
-					trace("x:"+player.x+":"+"y:"+player.y);
+					pathpoint--;
 				}
 				else
 				{
 					bMove = false;
+					timer.stop();
 				}
 			}
 		}
@@ -101,6 +143,7 @@ package
 		{
 			bMove = false;
 			aNodeMap = new Array();
+			gridMap = new Array();
 			aPath = new Array();
 			pathpoint = 0;
 			
@@ -111,12 +154,14 @@ package
 			pause.addEventListener(MouseEvent.CLICK, clickPause);
 			
 			reset = createBtn("重置", new Point(350, 15), this);
+			reset.addEventListener(MouseEvent.CLICK, clickReset);
 			
 			initMap();
 			createPlayer();
 			
-			addEventListener(MouseEvent.MOUSE_DOWN, setFlag);
-			player.addEventListener(Event.ENTER_FRAME, move);
+			timer = new Timer(100);
+			timer.addEventListener(TimerEvent.TIMER, move);
+//			player.addEventListener(Event.ENTER_FRAME, move);
 		}
 		
 		private function initMap():void
@@ -124,15 +169,18 @@ package
 			for(var i:int=0;i<MAPWIDTH;i++)
 			{
 				aNodeMap[i] = new Array();
+				gridMap[i] = new Array();
 				for(var j:int=0;j<MAPHEIGHT;j++)
 				{
-					var dia:Grid = new Grid(DIAMONDW, DIAMONDH);
+					var dia:Grid = new Grid(DIAMONDW, DIAMONDH, i, j);
 					dia.x = (j-i)*DIAMONDW/2;
 					dia.y = (i+j)*DIAMONDH/2;
 					addChild(dia);
 					dia.IsBlock = mapData[i][j];
 					
 					aNodeMap[i][j] = dia.IsBlock;
+					dia.addEventListener(MouseEvent.MOUSE_DOWN, setFlag);
+					gridMap[i][j] = dia;
 					
 					//					var txt:TextField = new TextField();
 					//					txt.text = "("+dia.x+","+dia.y+")";
@@ -145,7 +193,7 @@ package
 				//				apos[1] * mapwidth + apos[0];
 				astar.ndStart = new ANode([0,0], 0);
 				astar.ndCurrent = new ANode([0, 0], 0);
-				astar.ndEnd = new ANode([19, 19], 399);
+//				astar.ndEnd = new ANode([19, 19], 399);
 			}
 		}
 		

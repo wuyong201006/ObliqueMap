@@ -39,6 +39,14 @@ package
 			nMaxTry = 600;
 			nCrtTry = 0;
 			Init();
+			
+			nodeMap = amap;
+		}
+		
+		public function set nodeMap(amap:Array):void
+		{
+			Init();
+			
 			mapwidth = amap[0].length;
 			mapheight = amap.length;
 			aNodeMap = amap;
